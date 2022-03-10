@@ -57,9 +57,7 @@ def get_user_id(username):
                     return userdat.id
 
             except BadRequest as excp:
-                if excp.message == 'Chat not found':
-                    pass
-                else:
+                if excp.message != 'Chat not found':
                     LOGGER.exception("Error extracting user ID")
 
     return None
@@ -143,7 +141,7 @@ def snipe(bot: Bot, update: Update, args: List[str]):
         try:
             bot.sendMessage(int(chat_id), str(to_send))
         except TelegramError:
-            LOGGER.warning("Couldn't send to group %s", str(chat_id))
+            LOGGER.warning("Couldn't send to group %s", chat_id)
             update.effective_message.reply_text(
                 "Couldn't send the message. Perhaps I'm not part of that group?"
             )
@@ -232,7 +230,7 @@ def slist(bot: Bot, update: Update):
             name = "<a href='tg://user?id={}'>{}</a>".format(
                 user.id, user.first_name + (user.last_name or ""))
             if user.username:
-                name = html.escape("@" + user.username)
+                name = html.escape(f"@{user.username}")
             text1 += "\n - {}".format(name)
         except BadRequest as excp:
             if excp.message == 'Chat not found':

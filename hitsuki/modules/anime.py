@@ -152,7 +152,7 @@ query ($id: Int,$search: String) {
 def shorten(description, info='anilist.co'):
     ms_g = ""
     if len(description) > 700:
-        description = description[0:500] + '...'
+        description = description[:500] + '...'
         ms_g += f"\n**Description**: __{description}__ [Read More]({info})"
     else:
         ms_g += f"\n**Description**: __{description}__"
@@ -168,15 +168,18 @@ def shorten(description, info='anilist.co'):
 def t(milliseconds: int) -> str:
     """Inputs time in milliseconds, to get beautified time,
     as string"""
-    seconds, milliseconds = divmod(int(milliseconds), 1000)
+    seconds, milliseconds = divmod(milliseconds, 1000)
     minutes, seconds = divmod(seconds, 60)
     hours, minutes = divmod(minutes, 60)
     days, hours = divmod(hours, 24)
-    tmp = ((str(days) + " Days, ") if days else "") + \
-        ((str(hours) + " Hours, ") if hours else "") + \
-        ((str(minutes) + " Minutes, ") if minutes else "") + \
-        ((str(seconds) + " Seconds, ") if seconds else "") + \
-        ((str(milliseconds) + " ms, ") if milliseconds else "")
+    tmp = (
+        (f'{str(days)} Days, ' if days else "")
+        + (f'{str(hours)} Hours, ' if hours else "")
+        + (f'{str(minutes)} Minutes, ' if minutes else "")
+        + (f'{str(seconds)} Seconds, ' if seconds else "")
+        + (f'{str(milliseconds)} ms, ' if milliseconds else "")
+    )
+
     return tmp[:-2]
 
 
@@ -216,9 +219,13 @@ async def anime_search(c: Client, m: Message):
     else:
         search = search[1]
     variables = {'search': search}
-    json = requests.post(url, json={'query': anime_query, 'variables': variables}).json()[
-        'data'].get('Media', None)
-    if json:
+    if (
+        json := requests.post(
+            url, json={'query': anime_query, 'variables': variables}
+        )
+        .json()['data']
+        .get('Media', None)
+    ):
         msg = f"**{json['title']['romaji']}**(`{json['title']['native']}`)\n**Type**: {json['format']}\n**Status**: {json['status']}\n**Episodes**: {json.get('episodes', 'N/A')}\n**Duration**: {json.get('duration', 'N/A')} Per Ep.\n**Score**: {json['averageScore']}\n**Genres**: `"
         for x in json['genres']:
             msg += f"{x}, "
@@ -267,15 +274,18 @@ async def character_search(c: Client, m: Message):
         return
     search = search[1]
     variables = {'query': search}
-    json = requests.post(url, json={'query': character_query, 'variables': variables}).json()[
-        'data'].get('Character', None)
-    if json:
+    if (
+        json := requests.post(
+            url, json={'query': character_query, 'variables': variables}
+        )
+        .json()['data']
+        .get('Character', None)
+    ):
         ms_g = f"**{json.get('name').get('full')}**(`{json.get('name').get('native')}`)\n"
         description = f"{json['description']}"
         site_url = json.get('siteUrl')
         ms_g += shorten(description, site_url)
-        image = json.get('image', None)
-        if image:
+        if image := json.get('image', None):
             image = image.get('large')
             await m.reply_photo(image, caption=ms_g)
         else:
@@ -430,20 +440,16 @@ async def nhentai(c: Client, m: Message):
 def nhentai_data(noombers):
     url = f"https://nhentai.net/api/gallery/{noombers}"
     res = requests.get(url).json()
-    pages = res["images"]["pages"]
-    info = res["tags"]
-    title = res["title"]["english"]
-    links = []
-    tags = ""
-    artist = ''
-    total_pages = res['num_pages']
-    post_content = ""
-
     extensions = {
         'j': 'jpg',
         'p': 'png',
         'g': 'gif'
     }
+    links = []
+    pages = res["images"]["pages"]
+    info = res["tags"]
+    title = res["title"]["english"]
+    total_pages = res['num_pages']
     for i, x in enumerate(pages):
         media_id = res["media_id"]
         temp = x['t']
@@ -451,6 +457,8 @@ def nhentai_data(noombers):
         link = f"https://i.nhentai.net/galleries/{media_id}/{file}"
         links.append(link)
 
+    tags = ""
+    artist = ''
     for i in info:
         if i["type"] == "tag":
             tag = i['name']
@@ -460,9 +468,7 @@ def nhentai_data(noombers):
         if i["type"] == "artist":
             artist = f"{i['name']} "
 
-    for link in links:
-        post_content += f"<img src={link}><br>"
-
+    post_content = "".join(f"<img src={link}><br>" for link in links)
     post = telegraph.create_page(
         f"{title}",
         html_content=post_content,
@@ -486,9 +492,7 @@ async def site_search(client: Client, m: Message, site: str):
         search_url = f"https://animekaizoku.com/?s={search_query}"
         html_text = requests.get(search_url).text
         soup = bs4.BeautifulSoup(html_text, "html.parser")
-        search_result = soup.find_all("h2", {'class': "post-title"})
-
-        if search_result:
+        if search_result := soup.find_all("h2", {'class': "post-title"}):
             result = f"<b>Search results for</b> <code>{html.escape(search_query)}</code> <b>on</b> <code>AnimeKaizoku</code>: \n"
             for entry in search_result:
                 post_link = entry.a['href']

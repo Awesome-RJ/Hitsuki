@@ -38,22 +38,20 @@ def blacklist(bot: Bot, update: Update, args: List[str]):
     chat = update.effective_chat
     user = update.effective_user
 
-    conn = connected(bot, update, chat, user.id, need_admin=False)
-    if conn:
+    if conn := connected(bot, update, chat, user.id, need_admin=False):
         chat_id = conn
         chat_name = dispatcher.bot.getChat(conn).title
     else:
         if chat.type == "private":
             return
-        else:
-            chat_id = update.effective_chat.id
-            chat_name = chat.title
+        chat_id = update.effective_chat.id
+        chat_name = chat.title
 
     filter_list = tld(chat.id, "blacklist_active_list").format(chat_name)
 
     all_blacklisted = sql.get_chat_blacklist(chat_id)
 
-    if len(args) > 0 and args[0].lower() == 'copy':
+    if args and args[0].lower() == 'copy':
         for trigger in all_blacklisted:
             filter_list += "<code>{}</code>\n".format(html.escape(trigger))
     else:
@@ -78,8 +76,7 @@ def add_blacklist(bot: Bot, update: Update):
     user = update.effective_user
     words = msg.text.split(None, 1)
 
-    conn = connected(bot, update, chat, user.id)
-    if conn:
+    if conn := connected(bot, update, chat, user.id):
         chat_id = conn
         chat_name = dispatcher.bot.getChat(conn).title
     else:
@@ -120,8 +117,7 @@ def unblacklist(bot: Bot, update: Update):
     user = update.effective_user
     words = msg.text.split(None, 1)
 
-    conn = connected(bot, update, chat, user.id)
-    if conn:
+    if conn := connected(bot, update, chat, user.id):
         chat_id = conn
         chat_name = dispatcher.bot.getChat(conn).title
     else:
@@ -183,14 +179,12 @@ def del_blacklist(bot: Bot, update: Update):
 
     chat_filters = sql.get_chat_blacklist(chat.id)
     for trigger in chat_filters:
-        pattern = r"( |^|[^\w])" + re.escape(trigger) + r"( |$|[^\w])"
+        pattern = f"( |^|[^\\w]){re.escape(trigger)}( |$|[^\\w])"
         if re.search(pattern, to_match, flags=re.IGNORECASE):
             try:
                 message.delete()
             except BadRequest as excp:
-                if excp.message == "Message to delete not found":
-                    pass
-                else:
+                if excp.message != "Message to delete not found":
                     LOGGER.exception("Error while deleting blacklist message.")
             break
 

@@ -37,7 +37,7 @@ def getData(url, index):
     assets = api.getAssets(recentRelease)
     releaseName = api.getReleaseName(recentRelease)
     message = "<b>Author:</b> <a href='{}'>{}</a>\n".format(authorUrl, author)
-    message += "<b>Release Name:</b> " + releaseName + "\n\n"
+    message += f"<b>Release Name:</b> {releaseName}" + "\n\n"
     for asset in assets:
         message += "<b>Asset:</b> \n"
         fileName = api.getReleaseFileName(asset)
@@ -47,7 +47,7 @@ def getData(url, index):
         size = "{0:.2f}".format(sizeB)
         downloadCount = api.getDownloadCount(asset)
         message += assetFile + "\n"
-        message += "Size: " + size + " MB"
+        message += f"Size: {size} MB"
         message += "\nDownload Count: " + str(downloadCount) + "\n\n"
     return message
 
@@ -55,8 +55,7 @@ def getData(url, index):
 # likewise, aux function, not async
 def getRepo(bot, update, reponame):
     chat_id = update.effective_chat.id
-    repo = sql.get_repo(str(chat_id), reponame)
-    if repo:
+    if repo := sql.get_repo(str(chat_id), reponame):
         return repo.value, repo.backoffset
     return None, None
 
@@ -74,9 +73,7 @@ def getRelease(bot: Bot, update: Update, args: List[str]):
     ):
         msg.reply_text("Please specify a valid combination of <user>/<repo>")
         return
-    index = 0
-    if len(args) == 2:
-        index = int(args[1])
+    index = int(args[1]) if len(args) == 2 else 0
     url = args[0]
     text = getData(url, index)
     msg.reply_text(text, parse_mode=ParseMode.HTML,
@@ -149,9 +146,7 @@ def saveRepo(bot: Bot, update: Update, args: List[str]):
         msg.reply_text(
             "Invalid data, use <reponame> <user>/<repo> <value (optional)>")
         return
-    index = 0
-    if len(args) == 3:
-        index = int(args[2])
+    index = int(args[2]) if len(args) == 3 else 0
     sql.add_repo_to_db(str(chat_id), args[0].lower(), args[1], index)
     msg.reply_text("Repo shortcut saved successfully!")
     return

@@ -25,15 +25,14 @@ from pyrogram.types import Update
 
 @pbot.on_message(filters.command("direct"))
 async def direct_link_generator(c: Client, update: Update):
-    if not len(update.command) == 2:
+    if len(update.command) != 2:
         m = "Usage: `/direct <url>`"
         await update.reply_text(
             parse_mode="md",
             text=m)
         return
 
-    text = update.command[1]
-    if text:
+    if text := update.command[1]:
         links = re.findall(r'\bhttps?://.*\.\S+', text)
     else:
         return

@@ -43,8 +43,7 @@ def promote(bot: Bot, update: Update, args: List[str]) -> str:
     message = update.effective_message
     user = update.effective_user
     chat = update.effective_chat
-    conn = connected(bot, update, chat, user.id)
-    if conn:
+    if conn := connected(bot, update, chat, user.id):
         chatD = dispatcher.bot.getChat(conn)
     else:
         chatD = update.effective_chat
@@ -71,7 +70,7 @@ def promote(bot: Bot, update: Update, args: List[str]) -> str:
         return ""
 
     user_member = chatD.get_member(user_id)
-    if user_member.status == 'administrator' or user_member.status == 'creator':
+    if user_member.status in ['administrator', 'creator']:
         message.reply_text(tld(chat.id, "admin_err_user_admin"))
         return ""
 
@@ -112,8 +111,7 @@ def demote(bot: Bot, update: Update, args: List[str]) -> str:
     chat = update.effective_chat
     message = update.effective_message
     user = update.effective_user
-    conn = connected(bot, update, chat, user.id)
-    if conn:
+    if conn := connected(bot, update, chat, user.id):
         chatD = dispatcher.bot.getChat(conn)
     else:
         chatD = update.effective_chat
@@ -140,7 +138,7 @@ def demote(bot: Bot, update: Update, args: List[str]) -> str:
         message.reply_text(tld(chat.id, "admin_err_demote_creator"))
         return ""
 
-    if not user_member.status == 'administrator':
+    if user_member.status != 'administrator':
         message.reply_text(tld(chat.id, "admin_err_demote_noadmin"))
         return ""
 
@@ -185,7 +183,7 @@ def pin(bot: Bot, update: Update, args: List[str]) -> str:
     chat = update.effective_chat
     message = update.effective_message
 
-    is_group = chat.type != "private" and chat.type != "channel"
+    is_group = chat.type not in ["private", "channel"]
 
     prev_message = update.effective_message.reply_to_message
 
@@ -194,9 +192,8 @@ def pin(bot: Bot, update: Update, args: List[str]) -> str:
         return ""
 
     is_silent = True
-    if len(args) >= 1:
-        is_silent = not (args[0].lower() == 'notify' or args[0].lower()
-                         == 'loud' or args[0].lower() == 'violent')
+    if args:
+        is_silent = not args[0].lower() in ['notify', 'loud', 'violent']
 
     if prev_message and is_group:
         try:
@@ -204,9 +201,7 @@ def pin(bot: Bot, update: Update, args: List[str]) -> str:
                                prev_message.message_id,
                                disable_notification=is_silent)
         except BadRequest as excp:
-            if excp.message == "Chat_not_modified":
-                pass
-            else:
+            if excp.message != "Chat_not_modified":
                 raise
         return f"<b>{html.escape(chat.title)}:</b>" \
             "\n#PINNED" \
@@ -232,9 +227,7 @@ def unpin(bot: Bot, update: Update) -> str:
     try:
         bot.unpinChatMessage(chat.id)
     except BadRequest as excp:
-        if excp.message == "Chat_not_modified":
-            pass
-        else:
+        if excp.message != "Chat_not_modified":
             raise
 
     return f"<b>{html.escape(chat.title)}:</b>" \
@@ -248,8 +241,7 @@ def unpin(bot: Bot, update: Update) -> str:
 def invite(bot: Bot, update: Update):
     chat = update.effective_chat
     user = update.effective_user
-    conn = connected(bot, update, chat, user.id, need_admin=False)
-    if conn:
+    if conn := connected(bot, update, chat, user.id, need_admin=False):
         chatP = dispatcher.bot.getChat(conn)
     else:
         chatP = update.effective_chat
@@ -287,7 +279,7 @@ def adminlist(bot: Bot, update: Update):
         first_name = html.escape(user.first_name)
         name = "<a href='tg://user?id={}'>{}</a>".format(user.id, first_name)
         if user.username:
-            esc = html.escape("@" + user.username)
+            esc = html.escape(f"@{user.username}")
             name = "<a href='tg://user?id={}'>{}</a>".format(user.id, esc)
         text += "\n - {}".format(name)
 
@@ -301,7 +293,7 @@ def reaction(bot: Bot, update: Update, args: List[str]) -> str:
     user = update.effective_user
     message = update.effective_message
 
-    if len(args) >= 1:
+    if args:
         var = args[0].lower()
         if user_can_changeinfo(chat, user, bot.id) is False:
             message.reply_text(tld(chat.id, "admin_no_changeinfo_perm"))

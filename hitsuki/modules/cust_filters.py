@@ -41,11 +41,9 @@ def list_handlers(bot: Bot, update: Update):
     chat = update.effective_chat
     user = update.effective_user
 
-    conn = connected(bot, update, chat, user.id, need_admin=False)
-    if conn:
+    if conn := connected(bot, update, chat, user.id, need_admin=False):
         chat_id = conn
         chat_name = dispatcher.bot.getChat(conn).title
-        filter_list = tld(chat.id, "cust_filters_list")
     else:
         chat_id = update.effective_chat.id
         if chat.type == "private":
@@ -53,8 +51,7 @@ def list_handlers(bot: Bot, update: Update):
         else:
             chat_name = chat.title
 
-        filter_list = tld(chat.id, "cust_filters_list")
-
+    filter_list = tld(chat.id, "cust_filters_list")
     all_handlers = sql.get_chat_triggers(chat_id)
 
     if not all_handlers:
@@ -86,8 +83,7 @@ def filters(bot: Bot, update: Update):
         None,
         1)  # use python's maxsplit to separate Cmd, keyword, and reply_text
 
-    conn = connected(bot, update, chat, user.id)
-    if conn:
+    if conn := connected(bot, update, chat, user.id):
         chat_id = conn
         chat_name = dispatcher.bot.getChat(conn).title
     else:
@@ -176,8 +172,7 @@ def stop_filter(bot: Bot, update: Update):
     user = update.effective_user
     args = update.effective_message.text.split(None, 1)
 
-    conn = connected(bot, update, chat, user.id)
-    if conn:
+    if conn := connected(bot, update, chat, user.id):
         chat_id = conn
         chat_name = dispatcher.bot.getChat(conn).title
     else:
@@ -224,7 +219,7 @@ def reply_filter(bot: Bot, update: Update):
 
     chat_filters = sql.get_chat_triggers(chat.id)
     for keyword in chat_filters:
-        pattern = r"( |^|[^\w])" + re.escape(keyword) + r"( |$|[^\w])"
+        pattern = f"( |^|[^\\w]){re.escape(keyword)}( |$|[^\\w])"
         if re.search(pattern, to_match, flags=re.IGNORECASE):
             if MessageHandlerChecker.check_user(update.effective_user.id):
                 return
@@ -258,15 +253,15 @@ def reply_filter(bot: Bot, update: Update):
                                        disable_web_page_preview=True,
                                        reply_markup=keyboard)
                 except BadRequest as excp:
-                    if excp.message == "Unsupported url protocol":
-                        message.reply_text(
-                            tld(chat.id, "cust_filters_err_protocol"))
-                    elif excp.message == "Reply message not found":
+                    if excp.message == "Reply message not found":
                         bot.send_message(chat.id,
                                          filt.reply,
                                          parse_mode=ParseMode.MARKDOWN,
                                          disable_web_page_preview=True,
                                          reply_markup=keyboard)
+                    elif excp.message == "Unsupported url protocol":
+                        message.reply_text(
+                            tld(chat.id, "cust_filters_err_protocol"))
                     else:
                         try:
                             message.reply_text(

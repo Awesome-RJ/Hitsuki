@@ -30,8 +30,7 @@ def check_and_ban(update, user_id, should_message=True):
     message = update.effective_message
     try:
         if sw is not None:
-            sw_ban = sw.get_ban(user_id)
-            if sw_ban:
+            if sw_ban := sw.get_ban(user_id):
                 spamwatch_reason = sw_ban.reason
                 chat.kick_member(user_id)
                 if should_message:
@@ -39,9 +38,7 @@ def check_and_ban(update, user_id, should_message=True):
                         chat.id,
                         "antispam_spamwatch_banned").format(spamwatch_reason),
                         parse_mode=ParseMode.HTML)
-                    return
-                else:
-                    return
+                return
     except Exception:
         pass
 
@@ -80,7 +77,7 @@ def enforce_gban(bot: Bot, update: Update):
 @user_admin
 def antispam(bot: Bot, update: Update, args: List[str]):
     chat = update.effective_chat
-    if len(args) > 0:
+    if args:
         if args[0].lower() in ["on", "yes"]:
             sql.enable_antispam(chat.id)
             update.effective_message.reply_text(tld(chat.id, "antispam_on"))
