@@ -80,7 +80,7 @@ def set_flood(bot: Bot, update: Update, args: List[str]) -> str:
         message.reply_text(tld(chat.id, "admin_no_changeinfo_perm"))
         return ""
 
-    if len(args) >= 1:
+    if args:
         val = args[0].lower()
         if val in ("off", "no", "0"):
             sql.set_flood(chat.id, 0)

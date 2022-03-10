@@ -107,7 +107,7 @@ async def miui(c: Client, update: Update):
     yaml_data = load(get(MIUI_FIRM).content, Loader=Loader)
     data = [i for i in yaml_data if codename in i['codename']]
 
-    if len(data) < 1:
+    if not data:
         await update.reply_text("Provide a valid codename!")
         return
 
@@ -123,7 +123,7 @@ async def miui(c: Client, update: Update):
         md5 = fw['md5']
         codename = fw['codename']
 
-        btn = branch + ' | ' + method + ' | ' + version
+        btn = f'{branch} | {method} | {version}'
 
         keyboard = [[InlineKeyboardButton(text=btn, url=link)]]
 
@@ -151,7 +151,7 @@ async def realmeui(c: Client, update: Update):
     yaml_data = load(get(REALME_FIRM).content, Loader=Loader)
     data = [i for i in yaml_data if codename in i['codename']]
 
-    if len(data) < 1:
+    if not data:
         await update.reply_text("Provide a valid codename!")
         return
 
@@ -166,7 +166,7 @@ async def realmeui(c: Client, update: Update):
         date = fw['date']
         md5 = fw['md5']
 
-        btn = reg + ' | ' + version
+        btn = f'{reg} | {version}'
 
         keyboard = [[InlineKeyboardButton(text=btn, url=link)]]
 
@@ -192,8 +192,7 @@ async def samspecs(c: Client, update: Update):
             text=message)
         return
     device = update.command[1]
-    data = GetDevice(device).get()
-    if data:
+    if data := GetDevice(device).get():
         name = data['name']
         model = data['model']
         device = name.lower().replace(' ', '-')
@@ -239,8 +238,7 @@ async def models(c: Client, update: Update):
         return
 
     device = update.command[1]
-    data = GetDevice(device).get()
-    if data:
+    if data := GetDevice(device).get():
         name = data['name']
         device = data['device']
         brand = data['brand']
@@ -307,7 +305,7 @@ async def check(c: Client, update: Update):
         return
 
     cmd, temp, csc = update.command
-    model = 'sm-' + temp if not temp.upper().startswith('SM-') else temp
+    model = temp if temp.upper().startswith('SM-') else f'sm-{temp}'
     fota = get(
         f'http://fota-cloud-dn.ospserver.net/firmware/{csc.upper()}/{model.upper()}/version.xml')
     test = get(
@@ -370,7 +368,7 @@ async def check(c: Client, update: Update):
 
 @pbot.on_message(filters.command("twrp"))
 async def twrp(c: Client, update: Update):
-    if not len(update.command) == 2:
+    if len(update.command) != 2:
         m = "Type the device codename, example: <code>/twrp j7xelte</code>"
         await c.send_message(
             chat_id=update.chat.id,
@@ -418,7 +416,7 @@ async def los(c: Client, update: Update):
     except Exception:
         device = ''
 
-    if device == '':
+    if not device:
         reply_text = tld(chat_id, "cmd_example").format("los")
         await update.reply_text(reply_text, disable_web_page_preview=True)
         return
@@ -468,7 +466,7 @@ async def evo(c: Client, update: Update):
     if device == "x01bd":
         device = "X01BD"
 
-    if device == '':
+    if not device:
         reply_text = tld(chat_id, "cmd_example").format("evo")
         await update.reply_text(reply_text, disable_web_page_preview=True)
         return
@@ -526,7 +524,7 @@ async def bootleggers(c: Client, update: Update):
     except Exception:
         codename = ''
 
-    if codename == '':
+    if not codename:
         reply_text = tld(chat_id, "cmd_example").format("bootleggers")
         await update.reply_text(reply_text, disable_web_page_preview=True)
         return
@@ -535,38 +533,33 @@ async def bootleggers(c: Client, update: Update):
     if fetch.status_code == 200:
         nestedjson = json.loads(fetch.content)
 
-        if codename.lower() == 'x00t':
-            devicetoget = 'X00T'
-        else:
-            devicetoget = codename.lower()
-
+        devicetoget = 'X00T' if codename.lower() == 'x00t' else codename.lower()
         reply_text = ""
-        devices = {}
-
-        for device, values in nestedjson.items():
-            devices.update({device: values})
+        devices = dict(nestedjson.items())
 
         if devicetoget in devices:
+            dontneedlist = ['id', 'filename', 'download', 'xdathread']
+            peaksmod = {
+                'fullname': 'Device name',
+                'buildate': 'Build date',
+                'buildsize': 'Build size',
+                'downloadfolder': 'SourceForge folder',
+                'mirrorlink': 'Mirror link',
+                'xdathread': 'XDA thread'
+            }
             for oh, baby in devices[devicetoget].items():
-                dontneedlist = ['id', 'filename', 'download', 'xdathread']
-                peaksmod = {
-                    'fullname': 'Device name',
-                    'buildate': 'Build date',
-                    'buildsize': 'Build size',
-                    'downloadfolder': 'SourceForge folder',
-                    'mirrorlink': 'Mirror link',
-                    'xdathread': 'XDA thread'
-                }
                 if baby and oh not in dontneedlist:
                     if oh in peaksmod:
                         oh = peaksmod.get(oh, oh.title())
 
-                    if oh == 'SourceForge folder':
+                    if (
+                        oh == 'Mirror link'
+                        and baby != "Error404"
+                        or oh != 'Mirror link'
+                        and oh == 'SourceForge folder'
+                    ):
                         reply_text += f"\n**{oh}:** [Here]({baby})\n"
-                    elif oh == 'Mirror link':
-                        if not baby == "Error404":
-                            reply_text += f"\n**{oh}:** [Here]({baby})\n"
-                    else:
+                    elif oh != 'Mirror link':
                         reply_text += f"\n**{oh}:** `{baby}`"
 
             reply_text += tld(chat_id, "xda_thread").format(
@@ -591,7 +584,7 @@ async def pixys(c: Client, update: Update):
     except Exception:
         device = ''
 
-    if device == '':
+    if not device:
         reply_text = tld(chat_id, "cmd_example").format("pixys")
         await update.reply_text(reply_text, disable_web_page_preview=True)
         return
@@ -729,7 +722,7 @@ async def orangefox(c: Client, update: Update):
     except Exception:
         codename = ''
 
-    if codename == '':
+    if not codename:
         reply_text = tld(chat_id, "fox_devices_title")
 
         devices = _send_request('device/releases/stable')
@@ -784,7 +777,7 @@ async def orangefox(c: Client, update: Update):
 
 def _send_request(endpoint):
     API_HOST = 'https://api.orangefox.download/v2'
-    response = get(API_HOST + "/" + endpoint)
+    response = get(f'{API_HOST}/{endpoint}')
     if response.status_code == 404:
         return False
 

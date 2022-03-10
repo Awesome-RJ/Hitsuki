@@ -29,21 +29,17 @@ from telegram.ext.dispatcher import run_async
 @run_async
 def allow_connections(bot: Bot, update: Update, args: List[str]) -> str:
     chat = update.effective_chat  # type: Optional[Chat]
-    if chat.type != chat.PRIVATE:
-        if len(args) >= 1:
-            var = args[0]
-            print(var)
-            if var in ("no", "off"):
-                sql.set_allow_connect_to_chat(chat.id, False)
-                update.effective_message.reply_text(
-                    tld(chat.id, "connection_disable"))
-            elif var in ("yes", "on"):
-                sql.set_allow_connect_to_chat(chat.id, True)
-                update.effective_message.reply_text(
-                    tld(chat.id, "connection_enable"))
-            else:
-                update.effective_message.reply_text(
-                    tld(chat.id, "connection_err_wrong_arg"))
+    if chat.type != chat.PRIVATE and args:
+        var = args[0]
+        print(var)
+        if var in ("no", "off"):
+            sql.set_allow_connect_to_chat(chat.id, False)
+            update.effective_message.reply_text(
+                tld(chat.id, "connection_disable"))
+        elif var in ("yes", "on"):
+            sql.set_allow_connect_to_chat(chat.id, True)
+            update.effective_message.reply_text(
+                tld(chat.id, "connection_enable"))
         else:
             update.effective_message.reply_text(
                 tld(chat.id, "connection_err_wrong_arg"))
@@ -83,9 +79,7 @@ def connect_chat(bot, update, args):
                         tld(chat.id, "connection_success").format(chat_name),
                         parse_mode=ParseMode.MARKDOWN)
 
-                    # Add chat to connection history
-                    history = sql.get_history(user.id)
-                    if history:
+                    if history := sql.get_history(user.id):
                         # Vars
                         if history.chat_id1:
                             history1 = int(history.chat_id1)
@@ -113,7 +107,6 @@ def connect_chat(bot, update, args):
 
                         sql.add_history(user.id, history1, history2, history3,
                                         number)
-                        # print(history.user_id, history.chat_id1, history.chat_id2, history.chat_id3, history.updated)
                     else:
                         sql.add_history(user.id, connect_chat, "0", "0", 2)
                     # Rebuild user's keyboard
@@ -172,10 +165,8 @@ def disconnect_chat(bot, update):
         else:
             update.effective_message.reply_text(
                 tld(chat.id, "connection_dis_fail"))
-    elif update.effective_chat.type == 'supergroup':
-        update.effective_message.reply_text(tld(chat.id, 'common_cmd_pm_only'))
     else:
-        update.effective_message.reply_text(tld(chat.id, "common_cmd_pm_only"))
+        update.effective_message.reply_text(tld(chat.id, 'common_cmd_pm_only'))
 
 
 def connected(bot, update, chat, user_id, need_admin=True):
@@ -195,10 +186,9 @@ def connected(bot, update, chat, user_id, need_admin=True):
                             'administrator',
                             'creator') or user_id in SUDO_USERS:
                     return conn_id
-                else:
-                    update.effective_message.reply_text(
-                        tld(chat.id, "connection_err_no_admin"))
-                    return
+                update.effective_message.reply_text(
+                    tld(chat.id, "connection_err_no_admin"))
+                return
             else:
                 return conn_id
         else:

@@ -42,7 +42,7 @@ def format_bytes(size):
     while size > power:
         size /= power
         n += 1
-    return f"{size:.2f} {power_labels[n]+'B'}"
+    return f"{size:.2f} {power_labels[n]}B"
 
 
 def return_progress_string(current, total):

@@ -33,8 +33,7 @@ def get_rules(bot: Bot, update: Update):
     msg = update.effective_message
     from_pm = False
 
-    conn = connected(bot, update, chat, user.id)
-    if conn:
+    if conn := connected(bot, update, chat, user.id):
         chat_id = conn
         from_pm = True
     else:
@@ -54,13 +53,12 @@ def send_rules(update, chat_id, from_pm=False):
     try:
         chat = bot.get_chat(chat_id)
     except BadRequest as excp:
-        if excp.message == "Chat not found" and from_pm:
-            bot.send_message(user.id,
-                             tld(chat.id, "rules_shortcut_not_setup_properly"))
-            return
-        else:
+        if excp.message != "Chat not found" or not from_pm:
             raise
 
+        bot.send_message(user.id,
+                         tld(chat.id, "rules_shortcut_not_setup_properly"))
+        return
     rules = sql.get_rules(chat_id)
     text = tld(chat.id, "rules_display").format(escape_markdown(chat.title),
                                                 rules)
@@ -89,8 +87,7 @@ def set_rules(bot: Bot, update: Update):
     user = update.effective_user
     msg = update.effective_message
 
-    conn = connected(bot, update, chat, user.id)
-    if conn:
+    if conn := connected(bot, update, chat, user.id):
         chat_id = conn
     else:
         if chat.type == 'private':
@@ -130,8 +127,7 @@ def clear_rules(bot: Bot, update: Update):
     user = update.effective_user
     msg = update.effective_message
 
-    conn = connected(bot, update, chat, user.id)
-    if conn:
+    if conn := connected(bot, update, chat, user.id):
         chat_id = conn
     else:
         if chat.type == 'private':

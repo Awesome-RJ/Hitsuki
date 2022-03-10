@@ -88,7 +88,7 @@ if is_module_loaded(FILENAME):
     @user_admin
     def disable(bot: Bot, update: Update, args: List[str]):
         chat = update.effective_chat
-        if len(args) >= 1:
+        if args:
             disable_cmd = args[0]
             if disable_cmd.startswith(CMD_STARTERS):
                 disable_cmd = disable_cmd[1:]
@@ -110,7 +110,7 @@ if is_module_loaded(FILENAME):
     @user_admin
     def enable(bot: Bot, update: Update, args: List[str]):
         chat = update.effective_chat
-        if len(args) >= 1:
+        if args:
             enable_cmd = args[0]
             if enable_cmd.startswith(CMD_STARTERS):
                 enable_cmd = enable_cmd[1:]
@@ -132,9 +132,11 @@ if is_module_loaded(FILENAME):
     def list_cmds(bot: Bot, update: Update):
         chat = update.effective_chat
         if DISABLE_CMDS + DISABLE_OTHER:
-            result = ""
-            for cmd in set(DISABLE_CMDS + DISABLE_OTHER):
-                result += " - `{}`\n".format(escape_markdown(cmd))
+            result = "".join(
+                " - `{}`\n".format(escape_markdown(cmd))
+                for cmd in set(DISABLE_CMDS + DISABLE_OTHER)
+            )
+
             update.effective_message.reply_text(tld(
                 chat.id, "disable_able_commands").format(result),
                 parse_mode=ParseMode.MARKDOWN)
@@ -148,9 +150,7 @@ if is_module_loaded(FILENAME):
         if not disabled:
             return tld(chat_id, "disable_chatsettings_none_disabled")
 
-        result = ""
-        for cmd in disabled:
-            result += " - `{}`\n".format(escape_markdown(cmd))
+        result = "".join(" - `{}`\n".format(escape_markdown(cmd)) for cmd in disabled)
         return tld(chat_id,
                    "disable_chatsettings_list_disabled").format(result)
 

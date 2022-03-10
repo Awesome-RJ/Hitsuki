@@ -56,7 +56,7 @@ except Exception as eee:
     )
     sys.exit(1)
 
-if not CONFIG['is_example_config_or_not'] == "not_sample_anymore":
+if CONFIG['is_example_config_or_not'] != "not_sample_anymore":
     print("Please, use your eyes and stop being blinded.")
     sys.exit(1)
 
@@ -85,7 +85,7 @@ except ValueError:
     raise Exception("Your sudo users list does not contain valid integers.")
 
 try:
-    WHITELIST_USERS = set(int(x) for x in CONFIG['whitelist_users'] or [])
+    WHITELIST_USERS = {int(x) for x in CONFIG['whitelist_users'] or []}
 except ValueError:
     raise Exception(
         "Your whitelisted users list does not contain valid integers.")

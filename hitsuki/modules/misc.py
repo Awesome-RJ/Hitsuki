@@ -112,27 +112,23 @@ def info(bot: Bot, update: Update, args: List[str]):
                 "misc_info_user_link").format(mention_html(user.id, "link"))
 
     try:
-        spamwatch = sw.get_ban(int(user.id))
-        if spamwatch:
+        if spamwatch := sw.get_ban(int(user.id)):
             text += tld(chat.id, "misc_info_swban1")
             text += tld(chat.id, "misc_info_swban2").format(spamwatch.reason)
             text += tld(chat.id, "misc_info_swban3")
-        else:
-            pass
     except Exception:
         pass  # avoids crash if api is down
 
     if user.id == OWNER_ID:
         text += tld(chat.id, "misc_info_is_owner")
     else:
-        if user.id == int(254318997):
+        if user.id == 254318997:
             text += tld(chat.id, "misc_info_is_original_owner")
 
         if user.id in SUDO_USERS:
             text += tld(chat.id, "misc_info_is_sudo")
-        else:
-            if user.id in WHITELIST_USERS:
-                text += tld(chat.id, "misc_info_is_whitelisted")
+        elif user.id in WHITELIST_USERS:
+            text += tld(chat.id, "misc_info_is_whitelisted")
 
     for mod in USER_INFO:
         try:
@@ -158,8 +154,7 @@ def echo(bot: Bot, update: Update):
 
 @run_async
 def reply_keyboard_remove(bot: Bot, update: Update):
-    reply_keyboard = []
-    reply_keyboard.append([ReplyKeyboardRemove(remove_keyboard=True)])
+    reply_keyboard = [[ReplyKeyboardRemove(remove_keyboard=True)]]
     reply_markup = ReplyKeyboardRemove(remove_keyboard=True)
     old_message = bot.send_message(
         chat_id=update.message.chat_id,
@@ -289,7 +284,7 @@ def get_paste_content(bot: Bot, update: Update, args: List[str]):
     message = update.effective_message
     chat = update.effective_chat  # type: Optional[Chat]
 
-    if len(args) >= 1:
+    if args:
         key = args[0]
     else:
         message.reply_text(tld(chat.id, "misc_get_pasted_invalid"))
@@ -318,9 +313,10 @@ def get_paste_content(bot: Bot, update: Update, args: List[str]):
                     tld(chat.id, "misc_get_pasted_unknown"))
         r.raise_for_status()
 
-    update.effective_message.reply_text('```' + escape_markdown(r.text) +
-                                        '```',
-                                        parse_mode=ParseMode.MARKDOWN)
+    update.effective_message.reply_text(
+        (f'```{escape_markdown(r.text)}' + '```'),
+        parse_mode=ParseMode.MARKDOWN,
+    )
 
 
 @run_async
@@ -329,7 +325,7 @@ def get_paste_stats(bot: Bot, update: Update, args: List[str]):
     message = update.effective_message
     chat = update.effective_chat  # type: Optional[Chat]
 
-    if len(args) >= 1:
+    if args:
         key = args[0]
     else:
         message.reply_text(tld(chat.id, "misc_get_pasted_invalid"))
@@ -390,16 +386,12 @@ def wiki(bot: Bot, update: Update):
         return
     except wikipedia.exceptions.DisambiguationError as refer:
         refer = str(refer).split("\n")
-        if len(refer) >= 6:
-            batas = 6
-        else:
-            batas = len(refer)
-        text = ""
-        for x in range(batas):
-            if x == 0:
-                text += refer[x]+"\n"
-            else:
-                text += "- `"+refer[x]+"`\n"
+        batas = min(len(refer), 6)
+        text = "".join(
+            refer[x] + "\n" if x == 0 else f"- `{refer[x]}" + "`\n"
+            for x in range(batas)
+        )
+
         msg.reply_text(text, parse_mode="markdown")
         return
     except IndexError:
@@ -413,7 +405,7 @@ def wiki(bot: Bot, update: Update):
     else:
         if len(summary) >= 200:
             title = pagewiki.title
-            summary = summary[:200]+"..."
+            summary = f'{summary[:200]}...'
             button = InlineKeyboardMarkup([[InlineKeyboardButton(
                 text="Read More...", url="t.me/{}?start=wiki-{}".format(bot.username, title.replace(' ', '_')))]])
         else:
@@ -427,7 +419,7 @@ def covid(bot: Bot, update: Update):
     message = update.effective_message
     chat = update.effective_chat
     country = str(message.text[len('/covid '):])
-    if country == '':
+    if not country:
         country = "world"
     if country.lower() in ["south korea", "korea"]:
         country = "s. korea"

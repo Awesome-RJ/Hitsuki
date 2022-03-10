@@ -58,7 +58,7 @@ for module_name in ALL_MODULES:
             "Can't have two modules with the same name! Please change one")
 
     if hasattr(imported_module, "__help__") and imported_module.__help__:
-        HELPABLE[modname.lower()] = tld(0, "modname_" + modname).strip()
+        HELPABLE[modname.lower()] = tld(0, f"modname_{modname}").strip()
 
     # Chats to migrate on chat_migrated events
     if hasattr(imported_module, "__migrate__"):
@@ -103,7 +103,7 @@ def start(bot: Bot, update: Update, args: List[str]):
     chat = update.effective_chat
     # query = update.callback_query #Unused variable
     if update.effective_chat.type == "private":
-        if len(args) >= 1:
+        if args:
             if args[0].lower() == "help":
                 send_help(
                     update.effective_chat.id,
@@ -122,7 +122,7 @@ def start(bot: Bot, update: Update, args: List[str]):
                 title = pagewiki.title
                 summary = pagewiki.summary
                 if len(summary) >= 4096:
-                    summary = summary[:4000]+"..."
+                    summary = f'{summary[:4000]}...'
                 message.reply_text("<b>{}</b>\n{}".format(title, summary),
                                    parse_mode=ParseMode.HTML,
                                    reply_markup=InlineKeyboardMarkup(
@@ -192,13 +192,9 @@ def send_start(bot, update):
 def error_callback(bot, update, error):
     try:
         raise error
-    except Unauthorized:
+    except (Unauthorized, BadRequest):
         LOGGER.warning(error)
         # remove update.message.chat_id from conversation list
-    except BadRequest:
-        LOGGER.warning(error)
-
-        # handle malformed requests - read more below!
     except TimedOut:
         LOGGER.warning("NO NONO3")
         # handle slow connection problems
@@ -224,7 +220,7 @@ def help_button(bot: Bot, update: Update):
     try:
         if mod_match:
             module = mod_match.group(1)
-            mod_name = tld(chat.id, "modname_" + module).strip()
+            mod_name = tld(chat.id, f"modname_{module}").strip()
             help_txt = tld(
                 chat.id, module +
                 "_help")  # tld_help(chat.id, HELPABLE[module].__mod_name__)
@@ -285,7 +281,7 @@ def help_button(bot: Bot, update: Update):
 
         # ensure no spinny white circle
         bot.answer_callback_query(query.id)
-        # query.message.delete()
+            # query.message.delete()
 
     except BadRequest:
         pass
@@ -311,12 +307,12 @@ def get_help(bot: Bot, update: Update):
         mod_name = None
         for x in HELPABLE:
             if args[1].lower() == HELPABLE[x].lower():
-                mod_name = tld(chat.id, "modname_" + x).strip()
+                mod_name = tld(chat.id, f"modname_{x}").strip()
                 module = x
                 break
 
         if mod_name:
-            help_txt = tld(chat.id, module + "_help")
+            help_txt = tld(chat.id, f'{module}_help')
 
             if not help_txt:
                 LOGGER.exception(f"Help string for {module} not found!")
@@ -392,11 +388,11 @@ def main():
                           read_latency=3.0)
 
     LOGGER.info("Successfully loaded")
-    if len(argv) not in (1, 3, 4):
-        tbot.disconnect()
-    else:
+    if len(argv) in {1, 3, 4}:
         tbot.run_until_disconnected()
 
+    else:
+        tbot.disconnect()
     updater.idle()
 
 
@@ -417,8 +413,7 @@ def process_update(self, update):
     if not update.effective_chat:
         return
 
-    if update.effective_chat:  # Checks if update contains chat object
-        now = datetime.datetime.utcnow()
+    now = datetime.datetime.utcnow()
     try:
         cnt = CHATS_CNT.get(update.effective_chat.id, 0)
     except AttributeError:
@@ -473,7 +468,7 @@ def process_update(self, update):
 
 if __name__ == '__main__':
     timenow = datetime.datetime.now()
-    LOGGER.info("Successfully loaded modules: " + str(ALL_MODULES))
+    LOGGER.info(f"Successfully loaded modules: {str(ALL_MODULES)}")
     tbot.start(bot_token=TOKEN)
     pbot.start()
     main()
